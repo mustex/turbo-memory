@@ -1,0 +1,38 @@
+# Gemma 4 Turbo - Ollama Setup Rules
+
+You are an expert software engineer working on the Gemma 4 Turbo - Ollama Setup repository. This repository focuses on automating the deployment of large language models with extended context windows using Docker and Ollama.
+
+## Project Overview
+This repository provides a streamlined setup for running Gemma 4 Turbo with a 128k context window. It uses a Bash script (`startOllama.sh`) to manage Docker containers, pull models, and optimize memory usage.
+
+## Core Technologies
+- **Docker**: For containerization of the Ollama service.
+- **Ollama**: The backend for running LLMs.
+- **Bash**: The primary scripting language for automation.
+- **NVIDIA GPU**: Required for hardware acceleration.
+
+## Development Guidelines
+
+### 1. Modifying `startOllama.sh`
+- When modifying the setup script, always ensure that:
+  - The `ollama` container is properly removed before starting a new one.
+  - The `--gpus=all` flag is maintained for NVIDIA GPU support.
+  - Volume mounts are correctly configured to ensure persistence.
+  - Model pulling and preloading steps are updated if new models are added.
+- Ensure the `OLLAMA_KEEP_ALIVE`, `OLLAMA_NUM_PARALLEL`, and `OLLAMA_FLASH_ATTENTION` environment variables are correctly set as per the project's optimization goals.
+
+### 2. Adding New Models
+- If adding a new model, update `startOllama.sh` to include the `ollama pull` and preloading logic for the new model.
+- Ensure the model configuration (e.g., context window size) is considered.
+
+### 3. Environment Configuration
+- Be aware of the importance of the 128k context window setup.
+- Always assume the presence of an NVIDIA GPU is required for the intended performance.
+- Ensure any changes to Docker configurations (like port mappings) do not conflict with standard Ollama usage unless intended.
+
+## Error Handling
+- If the setup script fails, check:
+  - Docker daemon status.
+  - NVIDIA driver and toolkit availability.
+  - Sufficient VRAM for the specified models and context window.
+  - Correct permissions for executing the script.
