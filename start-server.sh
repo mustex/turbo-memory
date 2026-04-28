@@ -11,7 +11,7 @@ docker run -d --gpus all \
   ghcr.io/ggml-org/llama.cpp:server-cuda \
   -m /models/gemma-4-26B-A4B-it-UD-Q4_K_M.gguf \
   --slot-save-path /cache \
-  --ctx-size 65536 --no-mmap --mlock \
+  --ctx-size 49152 --no-mmap --mlock \
   --host 0.0.0.0 --port 8080 --n-gpu-layers 99 \
   --flash-attn on \
   --threads 2 --alias gemma4 \
