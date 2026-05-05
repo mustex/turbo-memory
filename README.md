@@ -1,64 +1,83 @@
-# Gemma 4 Turbo - Ollama Setup
+# Gemma 4 Turbo - llama.cpp Setup
 
-This repository provides a streamlined setup for running **Gemma 4 Turbo** with an extended **128k context window** using **Ollama** and **Docker**.
+This repository provides a streamlined setup for running **Gemma 4 Turbo** with a configured context window using **llama.cpp** and **Docker**.
 
 ## Overview
 
 ```mermaid
 graph TD
-    A[Start startOllama.sh] --> B[Remove existing 'ollama' container]
-    B --> C[Run new 'ollama' container with GPU support]
-    C --> D[Wait for container startup]
-    D --> E[Pull base models: gemma4, qwen3-embedding, qwen2.5-coder]
-    E --> F[Preload models into 128k memory]
+    A[Start refresh_hf_models.sh] --> B[Download GGUF models from Hugging Face]
+    B --> C[Start start-server.sh]
+    C --> D[Remove existing 'llamacpp' container]
+    D --> E[Run new 'llamacpp' container with GPU support]
+    E --> F[Wait for llama.cpp server health check]
     F --> G[Status: READY]
 ```
 
-The setup leverages an automation script to handle Docker container lifecycle, model pulling, and model preloading for optimized performance, specifically targeting hardware with approximately 24GB of VRAM.
+The setup leverages automation scripts to manage Docker container lifecycle, model downloading (via Hugging Face), and optimized llama.cpp server configuration, specifically targeting hardware with NVIDIA GPUs.
 
 ## Components
 
-- **`startOllama.sh`**: A bash script that:
-  - Cleans up existing Ollama containers.
-  - Runs the Ollama Docker container with GPU support.
-  - Mounts the current directory into the container.
-  - Pulls the required base models.
-  - Preloads models into memory.
-- **`.dockerignore`**: Ensures efficient Docker builds by excluding unnecessary files.
+- **`start-server.sh`**: A bash script that:
+  - Cleans up existing `llamacpp` containers.
+  - Runs the `llama.cpp` Docker container with NVIDIA GPU support.
+  - Mounts local models and cache directories into the container.
+  - Configures the server for the configured context window and flash attention.
+  - Performs a health check to ensure the server is ready.
+- **`refresh_hf_models.sh`**: A bash script that:
+  - Downloads specific quantized GGUF models from Hugging Face using `hf_transfer` for high speed.
+- **`.clinerules`**: Project-specific development guidelines.
 
 ## Prerequisites
 
 - **Docker**: Installed and running.
-- **NVIDIA GPU**: Required for GPU acceleration (`--gpus=all`).
-- **Bash Environment**: A bash-compatible shell (e.g., Git Bash, WSL, or Linux/macOS terminal) to execute `startOllama.sh`.
+- **NVIDIA GPU**: Required for GPU acceleration (`--gpus all`).
+- **Bash Environment**: A bash-compatible shell (e.g., Git Bash, WSL, or Linux/macOS terminal) to execute the scripts.
+- **LLAMA_HOME**: An environment variable defining the base directory for models and cache.
 
 ## Setup and Usage
 
-1.  **Configure Paths (Optional)**: 
-    Review `startOllama.sh` to ensure the volume mounts (e.g., `/c/Workspace/data/ollama`) match your local environment.
+1.  **Set LLAMA_HOME**:
+    Define the `LLAMA_HOME` environment variable to point to your desired storage location for models and cache.
 
-2.  **Run the Setup Script**:
-    Open your terminal and execute:
+2.  **Download Models**:
+    Run the model refresh script to pull the required GGUF files:
     ```bash
-    ./startOllama.sh
+    ./refresh_hf_models.sh
     ```
 
-3.  **Accessing the Model**:
-    Once the script outputs `READY`, the models are available via the Ollama API or via `docker exec`:
+3.  **Run the Server**:
+    Execute the startup script:
     ```bash
-    docker exec -it ollama ollama run gemma4:26b-a4b-it-q4_K_M
+    ./start-server.sh
     ```
+
+4.  **Accessing the Server**:
+    Once the script outputs `Model ready!`, the server is available at:
+    `http://localhost:8080`
+
+    You can interact with it via the llama.cpp API.
 
 ## Configuration Details
 
 ### Model Parameters
-The setup uses the following model configuration via the script:
-- Base model: `gemma4:26b-a4b-it-q4_K_M`
-- Context window: `131072` (128k)
+The setup uses the following configurations (as defined in `start-server.sh`):
+- **Base model**: `gemma-4-26B-A4B-it-UD-Q4_K_XL.gguf`
+- **Context window**: Defined in `start-server.sh`
+- **Flash Attention**: Enabled (`--flash-attn on`)
+- **GPU Layers**: Maximum acceleration (`--n-gpu-layers 999`)
+- **Cache Types**: `q8_0` for both K and V cache to optimize memory/performance balance.
 
 ### Docker Runtime
 The container is configured with:
-- `OLLAMA_KEEP_ALIVE=1h`: Keeps the model in memory for 1 hour.
-- `OLLAMA_NUM_PARALLEL=1`: Optimized for single-request stability.
-- `OLLAMA_FLASH_ATTENTION=1`: Enabled for improved performance in long-context scenarios.
-- Port mapping `11434:11434` to avoid conflicts with existing Ollama instances.
+- **Image**: `ghcr.io/ggml-org/llama.cpp:server-cuda`
+- **Port mapping**: `8080:8080`
+- **Volume mounts**: Local `models` and `cache` directories mapped to `/models` and `/cache` inside the container.
+
+## Performance
+
+Typical performance observed with the current configuration:
+
+- **Throughput**: ~160 tokens/second (TPS)
+
+
