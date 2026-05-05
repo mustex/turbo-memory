@@ -3,21 +3,41 @@
 # Script to start a llama.cpp server inside a Docker container with NVIDIA GPU support.
 # It uses models and cache stored in the LLAMA_HOME directory.
 
-# The port on the host machine to map to the container's port 8080
-PORT=8080
-CONTAINER_NAME="llamacpp"
+# Default values
+PORT=""
+MODEL_NAME=""
+ALIAS=""
 
-if [ "$#" -ne 2 ]; then
-    echo "Error: Missing arguments. Usage: ./start-server.sh <MODEL_NAME> <MODEL_ALIAS>"
+# Parse arguments
+EXTRA_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --port)
+            PORT="$2"
+            shift 2
+            ;;
+        --model)
+            MODEL_NAME="$2"
+            shift 2
+            ;;
+        --alias)
+            ALIAS="$2"
+            shift 2
+            ;;
+        *)
+            EXTRA_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$PORT" ] || [ -z "$MODEL_NAME" ]; then
+    echo "Error: Missing required arguments."
+    echo "Usage: ./start-server.sh --port <PORT> --model <MODEL_NAME> [--alias <ALIAS>] [EXTRA_PARAMS...]"
     exit 1
 fi
 
-MODEL_NAME="$1"
-MODEL_ALIAS="$2"
-
-CTX_SIZE=262144
-CACHE_TYPE_K="f16"
-CACHE_TYPE_V="f16"
+CONTAINER_NAME="llamacpp${ALIAS:+-$ALIAS}"
 
 # Resolve the Windows path to a Unix-style path for Docker compatibility
 HOME_PATH=`cygpath -u $LLAMA_HOME`
@@ -39,11 +59,11 @@ docker run -d --gpus all \
   ghcr.io/ggml-org/llama.cpp:server-cuda \
   -m /models/$MODEL_NAME \
   --slot-save-path /cache \
-  --ctx-size $CTX_SIZE --no-mmap --mlock \
+  --no-mmap --mlock \
   --host 0.0.0.0 --port 8080 --n-gpu-layers 999 \
   --flash-attn "on" \
-  --threads 2 --alias $MODEL_ALIAS \
-  -np 1 --cache-type-k $CACHE_TYPE_K --cache-type-v $CACHE_TYPE_V --keep -1
+  --threads 2 \
+  -np 1 --keep -1 "${EXTRA_ARGS[@]}"
 
 echo "Waiting for llama.cpp to load model"
 sleep 10
