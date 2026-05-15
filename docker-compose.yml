@@ -1,0 +1,102 @@
+services:
+  # --- NGINX API ROUTER ---
+  api-gateway:
+    image: nginx:alpine
+    container_name: local-ai-gateway
+    ports:
+      - "8080:80"  # Unified Entrypoint -> http://localhost:8080
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gemma4-generation
+      - qwen3-embedding
+      - qwen3-reranker
+
+  # --- CONFIG 1: GEMMA 4 ON RTX 5090 ---
+  gemma4-generation:
+    image: llama-cpp-turboquant:latest
+    container_name: gemma4-generation
+    environment:
+      - CUDA_VISIBLE_DEVICES=${RTX_5090_UUID}
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    volumes:
+      - ${HOME_PATH}/models:/models
+      - ${HOME_PATH}/cache:/cache
+    command: >
+      --model /models/${GEMMA_MODEL}
+      --n-gpu-layers 99 --ctx-size 147456 --flash-attn on
+      --cache-type-k turbo4 --cache-type-v turbo4
+      --host 0.0.0.0 --port 8000
+      --no-mmap --mlock --threads 2 -np 1 --keep -1
+      --metrics
+
+  # --- CONFIG 2: QWEN3 EMBEDDING ON RTX 4090 ---
+  qwen3-embedding:
+    image: llama-cpp-turboquant:latest
+    container_name: qwen3-embedding
+    environment:
+      - CUDA_VISIBLE_DEVICES=${RTX_4090_UUID}
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    volumes:
+      - ${HOME_PATH}/models:/models
+      - ${HOME_PATH}/cache:/cache
+    command: >
+      --model /models/${EMBEDDING_MODEL}
+      --n-gpu-layers 99 --ctx-size 32768 --flash-attn on
+      --embedding
+      --host 0.0.0.0 --port 8000
+      --metrics
+
+  # --- CONFIG 3: QWEN3 RERANKER ON RTX 4090 ---
+  qwen3-reranker:
+    image: llama-cpp-turboquant:latest
+    container_name: qwen3-reranker
+    environment:
+      - CUDA_VISIBLE_DEVICES=${RTX_4090_UUID}
+    deploy:
+      resources:
+        reservations:
+          devices: [{driver: nvidia, count: 1, capabilities: [gpu]}]
+    volumes:
+      - ${HOME_PATH}/models:/models
+      - ${HOME_PATH}/cache:/cache
+    command: >
+      --model /models/${RERANKER_MODEL}
+      --n-gpu-layers 99 --ctx-size 32768 --flash-attn on
+      --rerank
+      --host 0.0.0.0 --port 8000
+      --metrics
+
+   # --- METRICS SCRAPER (PROMETHEUS) ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: local-ai-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"  # Prometheus panel -> http://localhost:9090
+    depends_on:
+      - gemma4-generation
+      - qwen3-embedding
+      - qwen3-reranker
+
+  # --- PERFORMANCE VISUALIZATION (GRAFANA) ---
+  grafana:
+    image: grafana/grafana:latest
+    container_name: local-ai-grafana
+    ports:
+      - "3000:3000"  # Visual Dashboard -> http://localhost:3000
+    volumes:
+      - ${HOME_PATH}/grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin  # Default dashboard login
+    depends_on:
+      - prometheus
