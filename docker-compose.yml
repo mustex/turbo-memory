@@ -27,7 +27,7 @@ services:
       - ${HOME_PATH}/cache:/cache
     command: >
       --model /models/${GEMMA_MODEL}
-      --n-gpu-layers 99 --ctx-size 147456 --flash-attn on
+      --n-gpu-layers 99 --ctx-size 262144 --flash-attn on
       --cache-type-k turbo4 --cache-type-v turbo4
       --host 0.0.0.0 --port 8000
       --no-mmap --mlock --threads 2 -np 1 --keep -1
