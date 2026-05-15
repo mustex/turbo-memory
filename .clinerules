@@ -3,7 +3,7 @@
 You are an expert software engineer working on the Gemma 4 Turbo repository. This repository focuses on automating the deployment of large language models with extended context windows using Docker and llama.cpp.
 
 ## Project Overview
-This repository provides a streamlined setup for running Gemma 4 Turbo with a configured context window. It uses a Bash script (`start-server.sh`) to manage Docker containers, pull models, and optimize performance using llama.cpp.
+This repository provides a streamlined setup for running Gemma 4 Turbo with a configured context window. It uses `compose.sh` to manage Docker containers via `docker-compose.yml`, pull models, and optimize performance using llama.cpp.
 
 ## Core Technologies
 - **Docker**: For containerization of the llama.cpp service.
@@ -13,8 +13,8 @@ This repository provides a streamlined setup for running Gemma 4 Turbo with a co
 
 ## Development Guidelines
 
-### 1. Modifying `start-server.sh`
-- When modifying the setup script, always ensure that:
+### 1. Modifying `docker-compose.yml`
+- When modifying the compose configuration, always ensure that:
   - The `llamacpp` container is properly removed before starting a new one.
   - The `--gpus all` flag is maintained for NVIDIA GPU support.
   - Volume mounts are correctly configured to ensure persistence.
@@ -26,7 +26,7 @@ This repository provides a streamlined setup for running Gemma 4 Turbo with a co
 ### 2. Adding New Models
 - Always pull new models from Unsloth on Hugging Face.
 - Add the new model to the `refresh_hf_models.sh` script.
-- If adding a new model, update `start-server.sh` to include the correct model path and configuration.
+- If adding a new model, update `docker-compose.yml` to include the correct model path and configuration.
 - Ensure the model configuration (e.g., context window size, quantization type) is considered.
 
 ### 3. Environment Configuration
@@ -35,7 +35,7 @@ This repository provides a streamlined setup for running Gemma 4 Turbo with a co
 - Ensure any changes to Docker configurations (like port mappings) do not conflict with standard usage.
 
 ### 4. Safety Rules
-- Never execute the start scripts (`start-server.sh`, `start-gemma4.sh`, etc.) as part of any automated validation, testing, or debugging processes, as doing so will stop the currently running model.
+- Never execute `compose.sh` as part of any automated validation, testing, or debugging processes, as doing so will stop the currently running model.
 
 ## Error Handling
 - If the setup script fails, check:
@@ -43,4 +43,13 @@ This repository provides a streamlined setup for running Gemma 4 Turbo with a co
   - NVIDIA driver and toolkit availability.
   - Sufficient VRAM for the specified models and context window.
   - Correct permissions for executing the script.
-  - Whether the llama.cpp `/health` endpoint is responding correctly.
+- Whether the llama.cpp `/health` endpoint is responding correctly.
+
+## Response Formatting
+- Do not use LaTeX or complex mathematical symbols in responses, as they are not displayed correctly.
+- Use plain text or corresponding Unicode characters.
+- Examples:
+  - Use `π` instead of `$\pi$`
+  - Use `∑` instead of `$\sum$`
+  - Use `∞` instead of `$\infty$`
+  - Use `≥` instead of `$\ge$`
