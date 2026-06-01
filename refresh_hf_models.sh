@@ -5,12 +5,12 @@
 
 # Ensure LLAMA_HOME is set; it defines the base directory for models
 if [ "$LLAMA_HOME" == "" ]; then
-    echo "LLAMA_HOME is not set"
-    exit -1
+    echo "LLAMA_HOME is not set" >&2
+    exit 1
 fi
 
 # Convert Windows path to Unix-style using cygpath and define the models directory
-MODEL_PATH=`cygpath -u $LLAMA_HOME`/models
+MODEL_PATH=$(cygpath -u "$LLAMA_HOME")/models
 
 # Install necessary packages for Hugging Face downloads
 # hf_transfer is used for significantly faster download speeds
