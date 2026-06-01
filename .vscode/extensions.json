@@ -1,6 +1,11 @@
 {
   "recommendations": [
     "ahmadalli.vscode-nginx-conf",
-    "saoudrizwan.claude-dev"
+    "saoudrizwan.claude-dev",
+    "eamodio.gitlens",
+    "github.vscode-github-actions",
+    "GitHub.vscode-pull-request-github",
+    "ms-azuretools.vscode-containers",
+    "ms-vscode-remote.remote-containers"
   ]
 }
