@@ -12,7 +12,7 @@ export RTX_4090_UUID=$(nvidia-smi --query-gpu=uuid,name --format=csv,noheader | 
 echo "Found RTX 5090 UUID: ${RTX_5090_UUID:-NOT FOUND}"
 echo "Found RTX 4090 UUID: ${RTX_4090_UUID:-NOT FOUND}"
 
-HOME_PATH=`cygpath -u $LLAMA_HOME` docker compose up -d --force-recreate
+HOME_PATH=`cygpath -u $LLAMA_HOME` docker compose up -d --force-recreate --remove-orphans
 #HOME_PATH=`cygpath -u $LLAMA_HOME` docker compose exec api-gateway nginx -s reload
 
 echo "Waiting for llama.cpp to load model"
